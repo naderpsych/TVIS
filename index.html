@@ -63,7 +63,7 @@ body.watching{overflow:hidden}
 'use strict';
 // "keshet" sources need a fresh ticket from Mako before each play.
 const CH={
-  '11':{sources:['https://r.il.cdn-redge.media/livehls/oil/kancdn-live/live/kan11/live.livx/playlist.m3u8','https://kancdn.medonecdn.net/livehls/oil/kancdn-live/live/kan11/live.livx/playlist.m3u8']},
+  '11':{sources:['https://r.il.cdn-redge.media/livehls/oil/kancdn-live/live/kan11/live.livx/playlist.m3u8?dvr=21600000','https://kancdn.medonecdn.net/livehls/oil/kancdn-live/live/kan11/live.livx/playlist.m3u8']},
   '12':{official:'https://www.mako.co.il/mako-vod-live-tv/VOD-6540b8dcb64fd31006.htm',keshet:'/stream/hls/live/2033791/k12/index.m3u8'},
   '13':{sources:['https://d18b0e6mopany4.cloudfront.net/out/v1/2f2bc414a3db4698a8e94b89eaf2da2a/index.m3u8','https://reshet.g-mana.live/media/4607e158-e4d4-4e18-9160-3dc3ea9bc677/mainManifest.m3u8']},
   '24':{keshet:'/direct/hls/live/2035340/ch24live/index.m3u8?as=1'}
@@ -80,20 +80,36 @@ async function keshetUrl(path){
   return 'https://mako-streaming.akamaized.net'+path+(path.includes('?')?'&':'?')+r.tickets[0].ticket;
 }
 
+// Like the source site: hls.js first (Android's built-in player stutters on live),
+// the browser's own player only when hls.js is missing or can't read the manifest.
 function load(url){
   return new Promise((ok,fail)=>{
     stop();
-    if(video.canPlayType('application/vnd.apple.mpegurl')){
+    const native=()=>{
+      if(hls){hls.destroy();hls=null}
+      if(!video.canPlayType('application/vnd.apple.mpegurl'))return fail();
       video.src=url;
       video.onloadedmetadata=()=>ok();video.onerror=()=>fail();
-    }else if(window.Hls&&Hls.isSupported()){
-      hls=new Hls();hls.loadSource(url);hls.attachMedia(video);
+    };
+    if(window.Hls&&Hls.isSupported()){
+      hls=new Hls({maxBufferLength:20});
       hls.on(Hls.Events.MANIFEST_PARSED,()=>ok());
-      hls.on(Hls.Events.ERROR,(e,d)=>{if(d.fatal)fail()});
-    }else fail();
+      hls.on(Hls.Events.ERROR,(e,d)=>{if(!d.fatal)return;if(/manifest/i.test(d.details||''))native();else fail()});
+      hls.loadSource(url);hls.attachMedia(video);
+    }else native();
     setTimeout(fail,12000);
   });
 }
+
+// On a stall, drop one quality step once so playback keeps going.
+let steppedDown=false;
+video.addEventListener('waiting',()=>{
+  if(steppedDown||!hls||!hls.levels||hls.levels.length<2)return;
+  const order=hls.levels.map((l,i)=>i).sort((a,b)=>hls.levels[a].bitrate-hls.levels[b].bitrate);
+  const cur=hls.currentLevel,pos=cur<0?order.length-1:order.indexOf(cur);
+  if(pos>0){hls.currentLevel=order[pos-1];steppedDown=true}
+});
+video.addEventListener('playing',()=>{steppedDown=false});
 
 function goFull(){
   const f=watch.requestFullscreen||watch.webkitRequestFullscreen;
