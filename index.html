@@ -24,14 +24,14 @@ h1{text-align:center;font-size:clamp(30px,5vw,54px);margin:0}
 .c24{background:linear-gradient(160deg,#e0912a,#7a4710)}
 .watch{display:none;position:fixed;inset:0;background:#000;z-index:100}
 .watch.on{display:block}
-video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+video{position:absolute;top:0;left:0;right:0;bottom:calc(52px + env(safe-area-inset-bottom));width:100%;height:calc(100% - 52px - env(safe-area-inset-bottom));object-fit:contain;background:#000}
 .msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;text-align:center;font-size:clamp(24px,3vw,36px);font-weight:800;padding:20px}
 .msg.hide{display:none}
 .msg button{background:#ffe183;color:#171c2a;border:0;border-radius:18px;padding:16px 28px;font-size:30px;font-weight:900}
-.bar{position:absolute;left:0;right:0;bottom:0;z-index:130;display:flex;gap:10px;align-items:stretch;padding:10px 12px max(10px,env(safe-area-inset-bottom));background:rgba(0,0,0,.75)}
-.bar button{border:2px solid #fff8;border-radius:16px;background:#223;min-height:68px;font-size:26px;font-weight:900;flex:1}
+.bar{position:absolute;left:0;right:0;bottom:0;z-index:130;display:flex;gap:6px;align-items:stretch;padding:5px 8px max(5px,env(safe-area-inset-bottom));background:#000}
+.bar button{border:2px solid #fff8;border-radius:12px;background:#223;height:42px;font-size:19px;font-weight:900;flex:1;padding:0}
 .bar button.cur{background:#ffe183;color:#171c2a}
-.bar .x{flex:0 0 96px;background:#b3261e;font-size:44px;line-height:1}
+.bar .x{flex:0 0 70px;background:#b3261e;font-size:30px;line-height:1}
 body.watching{overflow:hidden}
 </style>
 </head>
