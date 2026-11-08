@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=yes">
+  <meta name="theme-color" content="#0b1220">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="הטלוויזיה שלי">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="טלוויזיה פשוטה: כאן 11, קשת 12, רשת 13">
+  <title>הטלוויזיה שלי</title>
+  <style>
+    :root{--bg:#101b32;--txt:#fff;--muted:#c8d3e6;--focus:#ffe987}
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;width:100%;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Arial",sans-serif;-webkit-text-size-adjust:100%}
+    button,a{font:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+    button{cursor:pointer;color:inherit}
+    button:focus-visible,a:focus-visible{outline:4px solid var(--focus);outline-offset:5px}
+    .home{min-height:100svh;display:flex;flex-direction:column;gap:28px;padding:max(28px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));max-width:1300px;margin:0 auto}
+    .head{text-align:center;padding-top:10px}
+    .head h1{font-size:clamp(32px,4.8vw,58px);font-weight:900;margin:0}
+    .head p{font-size:clamp(18px,2.2vw,26px);color:var(--muted);margin:10px 0 0}
+    .channels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;flex:1;align-content:center}
+    .channel{min-height:clamp(240px,35vh,400px);border:3px solid #ffffff47;border-radius:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;box-shadow:0 14px 36px #0005}
+    .channel:active{transform:scale(.97)}
+    .channel strong{font-size:clamp(110px,14vw,205px);font-weight:950;letter-spacing:-7px;line-height:.9;direction:ltr}
+    .channel span{font-size:clamp(30px,3.1vw,46px);font-weight:850}
+    .channel small{font-size:clamp(17px,2vw,24px);font-weight:700;margin-top:13px}
+    .kan{background:linear-gradient(165deg,#1175b1,#064468)}
+    .keshet{background:linear-gradient(165deg,#7657e3,#332478)}
+    .reshet{background:linear-gradient(165deg,#d44450,#7c1b28)}
+    .footer{text-align:center;font-size:18px;color:var(--muted);padding-bottom:4px}
+    /* CSS full-screen mode lets us keep a real, permanent X on top of the video.
+       The iPad's native video full-screen player does not allow custom overlays. */
+    .watch{display:none;position:fixed;inset:0;width:100%;height:100%;height:100dvh;background:#000;z-index:100;overflow:hidden}
+    .watch.active{display:block}
+    body.is-watching{overflow:hidden}
+    #video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+    .close{position:absolute;z-index:130;top:calc(env(safe-area-inset-top) + 17px);right:calc(env(safe-area-inset-right) + 19px);width:76px;height:76px;border-radius:24px;background:rgba(0,0,0,.82);border:3px solid rgba(255,255,255,.85);box-shadow:0 3px 20px #000a;display:grid;place-items:center;font-size:52px;line-height:1;font-weight:700;direction:ltr;padding:0 0 5px 0}
+    .close:active{background:#38445f}
+    .watch-label{position:absolute;z-index:101;top:calc(env(safe-area-inset-top) + 33px);left:calc(env(safe-area-inset-left) + 20px);padding:8px 16px;border-radius:15px;background:#000a;font-size:clamp(20px,2.7vw,30px);font-weight:900;pointer-events:none}
+    .notice{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:26px;background:#080e1a;text-align:center;z-index:110}
+    .notice.hidden{display:none}
+    .notice-icon{font-size:48px}
+    .notice-title{font-weight:900;font-size:clamp(23px,3vw,36px)}
+    .notice-small{font-size:clamp(17px,2.1vw,24px);color:#d0d8e5}
+    .notice-actions{display:flex;flex-wrap:wrap;gap:16px;justify-content:center}
+    .action{border:0;border-radius:18px;padding:16px 22px;min-height:66px;min-width:190px;background:#ffe183;color:#171c2a;text-decoration:none;font-weight:900;font-size:clamp(21px,2.6vw,30px)}
+    .action.secondary{background:#3a5279;color:#fff}
+    .action.hidden{display:none}
+    .pause{position:absolute;z-index:130;left:calc(env(safe-area-inset-left) + 20px);bottom:calc(env(safe-area-inset-bottom) + 22px);border:2px solid #fff9;background:#000b;color:white;border-radius:18px;min-width:72px;min-height:70px;font-size:32px;font-weight:800;padding:7px 18px}
+    .close-text{position:absolute;z-index:130;right:calc(env(safe-area-inset-right) + 100px);top:calc(env(safe-area-inset-top) + 32px);font-size:19px;background:#0009;border-radius:15px;padding:10px 13px;pointer-events:none}
+    @media(orientation:portrait){.home{gap:10px}.channels{grid-template-columns:1fr;gap:14px;align-content:normal}.channel{min-height:clamp(145px,21vh,250px);flex-direction:row;justify-content:space-around;border-radius:24px}.channel strong{font-size:clamp(76px,12vh,136px)}.channel span{font-size:clamp(26px,5vw,40px)}.channel small{display:none}.head{padding-bottom:14px}.close-text{display:none}}
+    @media(max-height:520px) and (orientation:landscape){.home{gap:6px;padding-top:10px;padding-bottom:10px}.head{padding:0}.head h1{font-size:30px}.head p{margin:0}.channel{min-height:180px}.channel strong{font-size:90px}.footer{font-size:14px}.close{width:64px;height:64px;font-size:44px}}
+    @media(prefers-reduced-motion:reduce){.channel{transition:none}}
+  </style>
+</head>
+<body>
+  <main class="home" id="home" aria-label="בחירת ערוץ">
+    <header class="head"><h1>📺 הטלוויזיה שלי</h1><p>על איזה ערוץ רוצים לצפות?</p></header>
+    <section class="channels" aria-label="בחירת ערוץ">
+      <button class="channel kan" type="button" data-channel="11" aria-label="צפייה בכאן 11"><strong>11</strong><span>כאן</span><small>לחצי לצפייה ▶</small></button>
+      <button class="channel keshet" type="button" data-channel="12" aria-label="צפייה בקשת 12"><strong>12</strong><span>קשת</span><small>לחצי לצפייה ▶</small></button>
+      <button class="channel reshet" type="button" data-channel="13" aria-label="צפייה ברשת 13"><strong>13</strong><span>רשת</span><small>לחצי לצפייה ▶</small></button>
+    </section>
+    <div class="footer">שלושה ערוצים · בלי חשבון · בלי תפריטים</div>
+  </main>
+  <section class="watch" id="watch" aria-label="צפייה בשידור" aria-hidden="true">
+    <video id="video" playsinline webkit-playsinline preload="none" aria-label="שידור חי" disablepictureinpicture></video>
+    <div class="watch-label" id="now">כאן 11</div>
+    <div class="notice" id="notice" role="status" aria-live="polite">
+      <span class="notice-icon" aria-hidden="true">📺</span>
+      <div class="notice-title" id="status">השידור נפתח…</div>
+      <div class="notice-small" id="subtitle">יש צורך בחיבור לאינטרנט</div>
+      <div class="notice-actions">
+        <button class="action hidden" id="play" type="button">▶ הפעלת השידור</button>
+        <a class="action secondary hidden" id="fallback" href="https://www.kan.org.il/live/" target="_blank" rel="noopener noreferrer">פתחי באתר הערוץ ↗</a>
+      </div>
+    </div>
+    <button class="pause" id="pause" type="button" aria-label="עצירה או חידוש השידור">⏸</button>
+    <span class="close-text">בחירת ערוץ</span>
+    <button class="close" id="close" type="button" aria-label="סגירה וחזרה לבחירת ערוצים" title="חזרה לבחירת ערוצים">×</button>
+  </section>
+  <script>
+    'use strict';
+    // External live streams may change or disallow playback outside their sites.
+    // Therefore each channel also has a link to its official broadcaster page.
+    const CHANNELS={
+      '11':{name:'כאן 11',official:'https://www.kan.org.il/live/',sources:[
+        'https://kancdn.medonecdn.net/livehls/oil/kancdn-live/live/kan11/live.livx/playlist.m3u8',
+        'https://r.il.cdn-redge.media/livehls/oil/kancdn-live/live/kan11/live.livx/playlist.m3u8']},
+      '12':{name:'קשת 12',official:'https://www.mako.co.il/mako-vod-live-tv/VOD-6540b8dcb64fd31006.htm',sources:[
+        'https://mako-streaming.akamaized.net/stream/hls/live/20000821/k12n12wad/index.m3u8?b-in-range=0-800',
+        'https://mako-streaming.akamaized.net/direct/hls/live/20000821/k12ni-bu/index.m3u8?b-in-range=0-800']},
+      '13':{name:'רשת 13',official:'https://13tv.co.il/live',sources:[
+        'https://d18b0e6mopany4.cloudfront.net/out/v1/2f2bc414a3db4698a8e94b89eaf2da2a/index.m3u8',
+        'https://d2xg1g9o5vns8m.cloudfront.net/out/v1/0855d703f7d5436fae6a9c7ce8ca5075/index.m3u8']}
+    };
+    const watch=document.getElementById('watch'),video=document.getElementById('video');
+    const notice=document.getElementById('notice'),status=document.getElementById('status');
+    const subtitle=document.getElementById('subtitle'),playButton=document.getElementById('play');
+    const fallback=document.getElementById('fallback'),now=document.getElementById('now');
+    const pause=document.getElementById('pause');
+    let current='',sourceIdx=0,timeout=null,playId=0;
+    function clearClock(){if(timeout!==null){clearTimeout(timeout);timeout=null}}
+    function showNotice(main,detail){status.textContent=main;subtitle.textContent=detail;notice.classList.remove('hidden')}
+    function showError(){clearClock();showNotice('אי אפשר לפתוח את השידור כאן','אפשר לצפות באתר הרשמי של הערוץ');fallback.classList.remove('hidden');playButton.classList.add('hidden')}
+    function trySource(id){
+      if(!current||id!==playId)return;
+      clearClock();
+      const channel=CHANNELS[current];
+      if(sourceIdx>=channel.sources.length){showError();return}
+      showNotice('השידור נפתח…','נא להמתין מעט');
+      fallback.classList.add('hidden');playButton.classList.add('hidden');
+      video.pause();video.removeAttribute('src');video.load();
+      video.src=channel.sources[sourceIdx++];video.load();
+      const pending=video.play();
+      if(pending&&pending.catch)pending.catch(e=>{
+        if(id!==playId)return;
+        if(e&&e.name==='NotAllowedError'){
+          clearClock();showNotice('לחצי להפעלת השידור','');playButton.classList.remove('hidden');
+        }
+      });
+      timeout=setTimeout(()=>{if(id===playId&&current&&video.readyState<2)trySource(id)},11000);
+    }
+    function selectChannel(number){
+      if(!CHANNELS[number])return;
+      current=number;sourceIdx=0;playId++;
+      now.textContent=CHANNELS[number].name;
+      fallback.href=CHANNELS[number].official;
+      watch.classList.add('active');watch.setAttribute('aria-hidden','false');
+      document.body.classList.add('is-watching');
+      trySource(playId);
+      document.getElementById('close').focus({preventScroll:true});
+    }
+    function closeChannel(){
+      playId++;current='';clearClock();
+      video.pause();video.removeAttribute('src');video.load();
+      watch.classList.remove('active');watch.setAttribute('aria-hidden','true');
+      document.body.classList.remove('is-watching');
+      playButton.classList.add('hidden');fallback.classList.add('hidden');
+      pause.textContent='⏸';
+    }
+    document.querySelectorAll('[data-channel]').forEach(b=>b.addEventListener('click',()=>selectChannel(b.dataset.channel)));
+    document.getElementById('close').addEventListener('click',closeChannel);
+    playButton.addEventListener('click',()=>{
+      playButton.classList.add('hidden');showNotice('השידור נפתח…','נא להמתין מעט');
+      const pending=video.play();
+      if(pending&&pending.catch)pending.catch(()=>{
+        showNotice('לא הצלחנו להפעיל את השידור','אפשר לפתוח את אתר הערוץ');fallback.classList.remove('hidden');
+      });
+    });
+    pause.addEventListener('click',()=>{
+      if(!current)return;
+      if(video.paused){
+        const pending=video.play();
+        if(pending&&pending.catch)pending.catch(()=>{showError()});
+      } else {video.pause()}
+    });
+    video.addEventListener('pause',()=>{pause.textContent='▶'});
+    video.addEventListener('playing',()=>{if(!current)return;clearClock();notice.classList.add('hidden');pause.textContent='⏸'});
+    video.addEventListener('error',()=>{if(current)trySource(playId)});
+    window.addEventListener('keydown',e=>{if(e.key==='Escape'&&current)closeChannel()});
+    window.addEventListener('pagehide',()=>{if(current){video.pause()}});
+  </script>
+</body>
+</html>
