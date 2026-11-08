@@ -49,7 +49,7 @@ body.watching{overflow:hidden}
 </main>
 <section class="watch" id="watch">
   <video id="video" playsinline webkit-playsinline autoplay></video>
-  <div class="msg" id="msg"><div id="msgText">השידור נפתח…</div><button id="play" hidden>▶ הפעלה</button></div>
+  <div class="msg" id="msg"><div id="msgText">השידור נפתח…</div><button id="play" hidden>▶ לחצי להפעלה</button></div>
   <div class="bar">
     <button class="x" id="close" aria-label="סגירה">✕</button>
     <button data-ch="11">כאן 11</button>
@@ -107,6 +107,8 @@ async function open(n){
   const c=CH[n];if(!c)return;
   current=n;const my=++token;
   document.querySelectorAll('.bar [data-ch]').forEach(b=>b.classList.toggle('cur',b.dataset.ch===n));
+  // Touch play() during the tap itself so the browser keeps allowing sound after slow loads.
+  try{const p=video.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}
   watch.classList.add('on');document.body.classList.add('watching');goFull();
   say('השידור נפתח…');
   let urls=c.sources||[];
@@ -121,7 +123,7 @@ async function open(n){
     else say('השידור לא זמין כרגע. נסי ערוץ אחר');
     return;
   }
-  try{await video.play();msg.classList.add('hide')}catch(e){say('',true)}
+  try{await video.play();msg.classList.add('hide')}catch(e){if(my===token)say('השידור מוכן',true)}
 }
 
 function close(){
