@@ -61,12 +61,17 @@ body.watching{overflow:hidden}
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
 <script>
 'use strict';
-// "keshet" sources need a fresh ticket from Mako before each play.
+// Each channel lists several sources, tried in order until one plays (like the source site).
+// {keshet:path} sources need a fresh ticket from Mako before each play.
 const CH={
   '11':{sources:['https://r.il.cdn-redge.media/livehls/oil/kancdn-live/live/kan11/live.livx/playlist.m3u8?dvr=21600000','https://kancdn.medonecdn.net/livehls/oil/kancdn-live/live/kan11/live.livx/playlist.m3u8']},
-  '12':{official:'https://www.mako.co.il/mako-vod-live-tv/VOD-6540b8dcb64fd31006.htm',keshet:'/stream/hls/live/2033791/k12/index.m3u8'},
+  '12':{official:'https://www.mako.co.il/mako-vod-live-tv/VOD-6540b8dcb64fd31006.htm',sources:[
+    {keshet:'/n12/hls/live/20000821/k12rh/index.m3u8'},
+    {keshet:'/stream/hls/live/2033791/k12/index.m3u8'},
+    {keshet:'/stream/hls/live/2033791/k12n12wad/index.m3u8'},
+    {keshet:'/stream/hls/live/2033791/k12dvr/index.m3u8'}]},
   '13':{sources:['https://d18b0e6mopany4.cloudfront.net/out/v1/2f2bc414a3db4698a8e94b89eaf2da2a/index.m3u8','https://reshet.g-mana.live/media/4607e158-e4d4-4e18-9160-3dc3ea9bc677/mainManifest.m3u8']},
-  '24':{keshet:'/direct/hls/live/2035340/ch24live/index.m3u8?as=1'}
+  '24':{sources:[{keshet:'/direct/hls/live/2035340/ch24live/index.m3u8?as=1'}]}
 };
 const watch=document.getElementById('watch'),video=document.getElementById('video'),msg=document.getElementById('msg'),msgText=document.getElementById('msgText'),play=document.getElementById('play');
 let hls=null,current='',token=0;
@@ -92,8 +97,9 @@ function load(url){
       video.onloadedmetadata=()=>ok();video.onerror=()=>fail();
     };
     if(window.Hls&&Hls.isSupported()){
-      hls=new Hls({maxBufferLength:20});
-      hls.on(Hls.Events.MANIFEST_PARSED,()=>ok());
+      hls=new Hls({maxBufferLength:20,levelLoadingMaxRetry:1});
+      // Wait for a quality playlist, not just the main one: Mako can sign the main list but block the rest.
+      hls.on(Hls.Events.LEVEL_LOADED,()=>ok());
       hls.on(Hls.Events.ERROR,(e,d)=>{if(!d.fatal)return;if(/manifest/i.test(d.details||''))native();else fail()});
       hls.loadSource(url);hls.attachMedia(video);
     }else native();
@@ -127,14 +133,13 @@ async function open(n){
   try{const p=video.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}
   watch.classList.add('on');document.body.classList.add('watching');goFull();
   say('השידור נפתח…');
-  let urls=c.sources||[];
-  if(c.keshet){try{urls=[await keshetUrl(c.keshet)]}catch(e){urls=[]}}
-  for(const u of urls){
+  let playing=false;
+  for(const s of c.sources){
     if(my!==token)return;
-    try{await load(u);break}catch(e){if(u===urls[urls.length-1])urls=null}
+    try{await load(s.keshet?await keshetUrl(s.keshet):s);playing=true;break}catch(e){}
   }
   if(my!==token)return;
-  if(!urls||!urls.length){
+  if(!playing){
     if(c.official){say('הערוץ ייפתח באתר הרשמי');setTimeout(()=>{if(my===token)location.href=c.official},1200)}
     else say('השידור לא זמין כרגע. נסי ערוץ אחר');
     return;
